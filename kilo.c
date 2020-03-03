@@ -1,10 +1,10 @@
 /*
-This is a text editor!
+This is a text editor.
 I have no idea what I am doing!
 
 https://viewsourcecode.org/snaptoken/kilo/
 
-left off at https://viewsourcecode.org/snaptoken/kilo/03.rawInputAndOutput.html#press-ctrl-q-to-quit
+left off at https://viewsourcecode.org/snaptoken/kilo/03.rawInputAndOutput.html#clear-the-screen
 */
 
 /*** includes ***/
@@ -15,6 +15,10 @@ left off at https://viewsourcecode.org/snaptoken/kilo/03.rawInputAndOutput.html#
 #include <stdlib.h>
 #include <termios.h>
 #include <unistd.h>
+
+/*** defines ***/
+
+#define CTRL_KEY(k) ((k) & 0x1f)
 
 /*** data ***/
 
@@ -51,6 +55,27 @@ void enableRawMode() {
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) die("tcsetattr");
 }
 
+char editorReadKey() {
+    // wait for a single key press, and return it
+    int nread;
+    char c;
+    while ((nread = read(STDIN_FILENO, &c, 1)) !=1) {
+        if (nread == -1 && errno != EAGAIN) die ("read");
+    }
+    return c;
+}
+
+void editorProcessKeypress() {
+    // wait for a keypress, and handle it
+    char c = editorReadKey();
+
+    switch (c) {
+        case CTRL_KEY('q'):
+        exit(0);
+        break;
+    }
+}
+
 /*** init ***/
 
 int main(){
@@ -59,15 +84,7 @@ int main(){
 
     // read character input with error handling, print to screen
     while(1) {
-        char c = '\0';
-        if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN) die("read");
-        if (iscntrl(c)) {
-            printf("%d\r\n", c);
-        } else {
-            printf("%d ('%c')\r\n", c, c);
-        }
-        // quit the program by typing 'q'
-        if (c == 'q') break;
+        editorProcessKeypress();
     }
 
     return 0;
